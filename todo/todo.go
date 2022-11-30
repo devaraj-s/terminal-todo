@@ -20,19 +20,35 @@ type item struct {
 	Done        bool
 	CreatedAt   time.Time
 	CompletedAt time.Time
+	DelegatedTo string
+	DelegatedAt time.Time
+	Delegated   bool
 }
 
 type Todos []item
 
 func (t *Todos) Add(task string) {
 	todo := item{
-		Task:        task,
-		Done:        false,
-		CreatedAt:   time.Now(),
-		CompletedAt: time.Time{},
+		Task:      task,
+		Done:      false,
+		CreatedAt: time.Now(),
 	}
 
 	*t = append(*t, todo)
+}
+
+func (t *Todos) Delegate(index int, toPerson string) error {
+	ls := *t
+
+	if index <= 0 || index > len(ls) {
+		return errors.New("invalid index")
+	}
+
+	ls[index-1].DelegatedAt = time.Now()
+	ls[index-1].Delegated = true
+	ls[index-1].DelegatedTo = toPerson
+
+	return nil
 }
 
 func (t *Todos) Complete(index int) error {
@@ -92,16 +108,20 @@ func (t *Todos) List() error {
 			{Align: simpletable.AlignCenter, Text: "Done?"},
 			{Align: simpletable.AlignCenter, Text: "Created At"},
 			{Align: simpletable.AlignCenter, Text: "Completed At"},
+			{Align: simpletable.AlignCenter, Text: "Delegated To"},
+			{Align: simpletable.AlignCenter, Text: "Delegated At"},
 		},
 	}
 	for index, row := range *t {
 		r := []*simpletable.Cell{
 			{Align: simpletable.AlignLeft, Text: fmt.Sprintf("%d", index+1)},
-			{Align: simpletable.AlignLeft, Text: getIcon(row.Done)},
+			{Align: simpletable.AlignLeft, Text: getIcon(row)},
 			{Align: simpletable.AlignLeft, Text: row.Task},
 			{Align: simpletable.AlignLeft, Text: fmt.Sprintf("%t", row.Done)},
 			{Align: simpletable.AlignLeft, Text: row.CreatedAt.Format(time.RFC822)},
-			{Align: simpletable.AlignLeft, Text: row.CompletedAt.Format(time.RFC822)},
+			{Align: simpletable.AlignLeft, Text: row.CreatedAt.Format(time.RFC822)},
+			{Align: simpletable.AlignLeft, Text: row.DelegatedTo},
+			{Align: simpletable.AlignLeft, Text: row.DelegatedAt.Format(time.RFC822)},
 		}
 
 		table.Body.Cells = append(table.Body.Cells, r)
@@ -129,10 +149,14 @@ func (t *Todos) Store() error {
 //""
 //""
 
-func getIcon(isDone bool) string {
+func getIcon(row item) string {
 	doneOption := ""
-	if isDone {
+
+	if row.Done {
 		doneOption = "ﱣ"
+	}
+	if row.Delegated {
+		doneOption = ""
 	}
 
 	return doneOption

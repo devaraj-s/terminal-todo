@@ -1,12 +1,13 @@
 /*
 Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/devaraj-s/terminal-todo/todo"
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +22,24 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("delegate called")
+		delegateTo, _ := cmd.Flags().GetString("delegate")
+		index, _ := cmd.Flags().GetInt("task")
+
+		if index == -1 {
+			fmt.Println("Please enter the index of the task")
+			os.Exit(0)
+		}
+		if delegateTo == "" {
+			fmt.Println("Please enter the person to delegate to")
+			os.Exit(0)
+		}
+		todo := &todo.Todos{}
+		todo.Load()
+		todo.Delegate(index, delegateTo)
+		if err := todo.Store(); err != nil {
+			fmt.Println(err)
+		}
+		todo.List()
 	},
 }
 
@@ -36,5 +54,6 @@ func init() {
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// delegateCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	delegateCmd.Flags().StringP("delegate", "d", "", "Delegate task to")
+	delegateCmd.Flags().IntP("task", "t", -1, "Task id")
 }
