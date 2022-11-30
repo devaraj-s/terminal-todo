@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"os"
 	"time"
+
+	"github.com/alexeyco/simpletable"
 )
 
 const (
@@ -42,7 +44,6 @@ func (t *Todos) Complete(index int) error {
 
 	ls[index-1].CompletedAt = time.Now()
 	ls[index-1].Done = true
-
 	return nil
 }
 
@@ -79,12 +80,60 @@ func (t *Todos) Load() error {
 	return nil
 }
 
+func (t *Todos) List() error {
+	table := simpletable.New()
+
+	table.Header = &simpletable.Header{
+		Cells: []*simpletable.Cell{
+			{Align: simpletable.AlignCenter, Text: "#"},
+
+			{Align: simpletable.AlignCenter, Text: "#"},
+			{Align: simpletable.AlignCenter, Text: "Task"},
+			{Align: simpletable.AlignCenter, Text: "Done?"},
+			{Align: simpletable.AlignCenter, Text: "Created At"},
+			{Align: simpletable.AlignCenter, Text: "Completed At"},
+		},
+	}
+	for index, row := range *t {
+		r := []*simpletable.Cell{
+			{Align: simpletable.AlignLeft, Text: fmt.Sprintf("%d", index+1)},
+			{Align: simpletable.AlignLeft, Text: getIcon(row.Done)},
+			{Align: simpletable.AlignLeft, Text: row.Task},
+			{Align: simpletable.AlignLeft, Text: fmt.Sprintf("%t", row.Done)},
+			{Align: simpletable.AlignLeft, Text: row.CreatedAt.Format(time.RFC822)},
+			{Align: simpletable.AlignLeft, Text: row.CompletedAt.Format(time.RFC822)},
+		}
+
+		table.Body.Cells = append(table.Body.Cells, r)
+	}
+
+	// table.SetStyle(simpletable.StyleCompactLite)
+	fmt.Println(table.String())
+
+	return nil
+}
+
 func (t *Todos) Store() error {
 	data, err := json.Marshal(t)
 	if err != nil {
 		return err
 	}
-	fmt.Println(t)
 
 	return ioutil.WriteFile(todoFile, data, 0o644)
+}
+
+//""
+//"ﱤ"
+//"ﱣ"
+//""
+//""
+//""
+
+func getIcon(isDone bool) string {
+	doneOption := ""
+	if isDone {
+		doneOption = "ﱣ"
+	}
+
+	return doneOption
 }

@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/devaraj-s/terminal-todo/todo"
 	"github.com/spf13/cobra"
@@ -19,12 +20,18 @@ var addCmd = &cobra.Command{
 		item, _ := cmd.Flags().GetString("todo")
 
 		fmt.Println(item)
+
+		if item == "" {
+			fmt.Println("Please enter the task")
+			os.Exit(0)
+		}
 		todo := &todo.Todos{}
 		todo.Load()
 		todo.Add(item)
 		if err := todo.Store(); err != nil {
 			fmt.Println(err)
 		}
+		todo.List()
 	},
 }
 
